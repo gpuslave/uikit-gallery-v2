@@ -8,11 +8,15 @@
 import UIKit
 
 /// View controller to display a single image in full view with pinch-to-zoom
+/// Now supports loading images from URLs
 class ImageDetailViewController: UIViewController {
     
     // MARK: - Properties
     
-    /// The image to display
+    /// The image URL to load from
+    var imageURL: String?
+    
+    /// The image to display (can be pre-loaded or loaded from URL)
     var image: UIImage?
     
     /// Title for the navigation bar
@@ -22,6 +26,15 @@ class ImageDetailViewController: UIViewController {
     var imageDescription: String?
     
     // MARK: - UI Elements
+    
+    /// Activity indicator for loading state
+    private lazy var activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.color = .systemGray
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
     
     /// Scroll view to enable zooming
     private let scrollView: UIScrollView = {
@@ -72,8 +85,8 @@ class ImageDetailViewController: UIViewController {
         // Setup UI
         setupUI()
         
-        // Configure with data
-        configure()
+        // Load image (from URL or pre-loaded)
+        loadImage()
         
         // Add double tap gesture for quick zoom
         addDoubleTapGesture()
@@ -88,6 +101,9 @@ class ImageDetailViewController: UIViewController {
         
         // Add image view to scroll view
         scrollView.addSubview(imageView)
+        
+        // Add activity indicator to scroll view
+        scrollView.addSubview(activityIndicator)
         
         // Add description label
         view.addSubview(descriptionLabel)
@@ -108,18 +124,64 @@ class ImageDetailViewController: UIViewController {
             imageView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             imageView.heightAnchor.constraint(equalTo: scrollView.heightAnchor),
             
+            // Activity indicator - center of scroll view
+            activityIndicator.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            
             // Description label - at the bottom
             descriptionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             descriptionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             descriptionLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             descriptionLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 40)
         ])
+        
+        // Set description text
+        descriptionLabel.text = imageDescription
     }
     
-    /// Configures the view with the image and description
-    private func configure() {
+    /// Loads the image from URL or uses pre-loaded image
+    private func loadImage() {
+        // If image is already provided (pre-loaded), use it
+        if let image = image {
+            print("📷 [Detail] Using pre-loaded image")
+            configureWithImage(image)
+            return
+        }
+        
+        // Otherwise, load from URL
+        guard let urlString = imageURL else {
+            print("❌ [Detail] No image or URL provided")
+            return
+        }
+        
+        print("⬇️ [Detail] Loading image from URL: \(urlString.prefix(150))...")
+        
+        // Show loading indicator
+        activityIndicator.startAnimating()
+        
+        // Load image from URL
+        ImageLoader.shared.loadImage(from: urlString) { [weak self] image in
+            self?.activityIndicator.stopAnimating()
+            
+            if let image = image {
+                print("✅ [Detail] Image loaded successfully")
+                self?.configureWithImage(image)
+            } else {
+                print("❌ [Detail] Failed to load image")
+                self?.showPlaceholder()
+            }
+        }
+    }
+    
+    /// Configures the view with the loaded image
+    private func configureWithImage(_ image: UIImage) {
         imageView.image = image
-        descriptionLabel.text = imageDescription
+    }
+    
+    /// Shows a placeholder when image fails to load
+    private func showPlaceholder() {
+        imageView.image = UIImage(systemName: "photo")
+        imageView.tintColor = .systemGray3
     }
     
     /// Adds double tap gesture for quick zoom in/out
@@ -155,7 +217,15 @@ class ImageDetailViewController: UIViewController {
     
     // MARK: - Initialization
     
-    /// Convenience initializer with all data
+    /// Convenience initializer with image URL
+    convenience init(imageURL: String?, title: String?, description: String?) {
+        self.init()
+        self.imageURL = imageURL
+        self.imageTitle = title
+        self.imageDescription = description
+    }
+    
+    /// Convenience initializer with pre-loaded image (backward compatibility)
     convenience init(image: UIImage?, title: String?, description: String?) {
         self.init()
         self.image = image
@@ -201,3 +271,4 @@ extension ImageDetailViewController: UIScrollViewDelegate {
         imageView.frame = frameToCenter
     }
 }
+
