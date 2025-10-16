@@ -63,14 +63,14 @@ class ImageLoader {
         // STEP 1: Check if image is already in memory cache
         let cacheKey = urlString as NSString
         if let cachedImage = imageCache.object(forKey: cacheKey) {
-            print("✅ [ImageLoader] Using cached image for: \(urlString.prefix(50))...")
+            print("[ImageLoader] Using cached image for: \(urlString)...")
             completion(cachedImage)
             return nil
         }
         
         // STEP 2: Check if we're already downloading this image
         if let existingTask = runningTasks[urlString] {
-            print("⏳ [ImageLoader] Already downloading: \(urlString.prefix(50))...")
+            print("[ImageLoader] Already downloading: \(urlString)...")
             return existingTask
         }
         
@@ -81,7 +81,7 @@ class ImageLoader {
             return nil
         }
         
-        print("⬇️ [ImageLoader] Starting download: \(urlString.prefix(50))...")
+        print("[ImageLoader] Starting download: \(urlString)...")
         
         // STEP 4: Create and start download task
         let task = session.dataTask(with: url) { [weak self] data, response, error in
@@ -118,7 +118,7 @@ class ImageLoader {
             
             // STEP 7: Cache the image
             self?.imageCache.setObject(image, forKey: cacheKey)
-            print("✅ [ImageLoader] Image downloaded and cached: \(urlString.prefix(50))...")
+            print("✅ [ImageLoader] Image downloaded and cached: \(urlString)...")
             
             // STEP 8: Call completion on main thread
             DispatchQueue.main.async {
@@ -151,7 +151,7 @@ class ImageLoader {
     /// Clears the in-memory image cache
     func clearCache() {
         imageCache.removeAllObjects()
-        print("🗑️ [ImageLoader] Cache cleared")
+        print("[ImageLoader] Cache cleared")
     }
 }
 

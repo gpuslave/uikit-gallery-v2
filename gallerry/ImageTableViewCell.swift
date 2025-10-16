@@ -98,7 +98,7 @@ class ImageTableViewCell: UITableViewCell {
             // Make sure this cell is still showing the same image URL
             // (cell might have been reused for a different row)
             guard self?.currentImageURL == imageURL else {
-                print("⚠️ [Cell] Cell was reused, skipping image update")
+                print("[Cell] Cell was reused, skipping image update")
                 return
             }
             

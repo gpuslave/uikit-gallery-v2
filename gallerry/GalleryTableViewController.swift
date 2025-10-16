@@ -60,7 +60,7 @@ class SimpleGalleryTableViewController: UITableViewController {
         // Add refresh control for cache clearing
         setupRefreshControl()
         
-        print("📱 [Gallery] View loaded with \(imageURLs.count) images")
+        print("[Gallery] View loaded with \(imageURLs.count) images")
     }
     
     // MARK: - Setup Methods
@@ -74,7 +74,7 @@ class SimpleGalleryTableViewController: UITableViewController {
     
     /// Handles pull-to-refresh action
     @objc private func handleRefresh() {
-        print("🔄 [Gallery] Refreshing - clearing cache")
+        print("[Gallery] Refreshing - clearing cache")
         
         // Clear image cache
         ImageLoader.shared.clearCache()
@@ -99,14 +99,18 @@ class SimpleGalleryTableViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Dequeue the custom cell from storyboard
         guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ImageTableViewCell else {
-            fatalError("Unable to dequeue ImageTableViewCell with identifier: \(cellIdentifier)")
+            fatalError("Unable to dequeue ImageTableViewCell")
         }
         
-        // Configure cell with URL (not asset name!)
+        let originalURL = imageURLs[indexPath.row]
+        
+        // Get smart thumbnail URL (finds 240-width size with correct aspect ratio)
+        let thumbnailURL = URLHelper.getThumbnailURL(from: originalURL, targetWidth: 240)
+        
+        // Configure cell with THUMBNAIL URL
         cell.configure(
-            with: imageURLs[indexPath.row],          // Changed: URL instead of imageName
+            with: thumbnailURL,
             title: imageTitles[indexPath.row],
             description: imageDescriptions[indexPath.row]
         )
@@ -119,21 +123,23 @@ class SimpleGalleryTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        // Get selected data
-        let imageURL = imageURLs[indexPath.row]
+        let originalURL = imageURLs[indexPath.row]
+        
+        // Get full-size URL (uses largest available size)
+        let fullSizeURL = URLHelper.getFullSizeURL(from: originalURL)
+        
         let title = imageTitles[indexPath.row]
         let description = imageDescriptions[indexPath.row]
         
-        print("👆 [Gallery] Selected: \(title)")
+        print("[Gallery] Selected: \(title)")
         
-        // Create detail view controller with URL
+        // Create detail view with FULL SIZE URL
         let detailVC = ImageDetailViewController(
-            imageURL: imageURL,        // Changed: Pass URL instead of UIImage
+            imageURL: fullSizeURL,
             title: title,
             description: description
         )
         
-        // Push to navigation stack
         navigationController?.pushViewController(detailVC, animated: true)
     }
     
@@ -141,7 +147,7 @@ class SimpleGalleryTableViewController: UITableViewController {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        print("⚠️ [Gallery] Memory warning - clearing cache")
+        print("[Gallery] Memory warning - clearing cache")
         ImageLoader.shared.clearCache()
     }
 }

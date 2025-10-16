@@ -143,18 +143,18 @@ class ImageDetailViewController: UIViewController {
     private func loadImage() {
         // If image is already provided (pre-loaded), use it
         if let image = image {
-            print("📷 [Detail] Using pre-loaded image")
+            print("[Detail] Using pre-loaded image")
             configureWithImage(image)
             return
         }
         
         // Otherwise, load from URL
         guard let urlString = imageURL else {
-            print("❌ [Detail] No image or URL provided")
+            print("[Detail] No image or URL provided")
             return
         }
         
-        print("⬇️ [Detail] Loading image from URL: \(urlString.prefix(150))...")
+        print("[Detail] Loading image from URL: \(urlString)...")
         
         // Show loading indicator
         activityIndicator.startAnimating()
