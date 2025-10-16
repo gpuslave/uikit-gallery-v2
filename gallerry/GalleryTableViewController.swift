@@ -16,28 +16,28 @@ class SimpleGalleryTableViewController: UITableViewController {
     /// VK URLs contain multiple sizes (as= parameter) - iOS will request appropriate size
     private let imageURLs = [
         "https://sun9-4.vkuserphoto.ru/s/v1/if2/0ZZRC55m2Dx2PErnGDD8Dbsj2XdkhvutYLQbooufdkn4g-x7I1_nT-7GgjsD7tLnoWnDQlSzXiyVa4YQT2awXr1A.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=2560x0",
-        "https://sun9-87.vkuserphoto.ru/s/v1/if2/uMnllWn9AdoK9GYKkcVXdexiC4b6WrAmZt7HyYVqiZJm4uzimWBZMBYvG3yVdmtHUXnluWrL6RIdO9tJapj_TkWV.jpg?quality=95&as=32x18,48x27,72x40,108x61,160x90,240x135,360x202,480x270,540x304,640x360,720x405,1080x607,1280x720,1440x810,2560x1440&from=bu&cs=2560x0",
+        "https://assets.science.nasa.gov/content/dam/science/missions/hubble/releases/2015/01/STScI-01EVT2MSVNZ3QDHZDHNZMQ3927.jpg",
         "https://sun9-61.vkuserphoto.ru/s/v1/ig2/3c2hvP6ty0P6CB7AsgxO6W6ELCthxTgxix-9jwVEjtvc57E2FsvCiqrR5mZEIvzYC_msax_xmGLqRUG6J2nXqig9.jpg?quality=95&as=32x57,48x85,72x128,108x192,160x284,240x427,360x640,480x853,540x960,640x1138,720x1280,1080x1920,1280x2276,1440x2560&from=bu&cs=1440x0",
-        "https://sun9-58.vkuserphoto.ru/s/v1/if2/tEtRigILItyJcmZaSI2_Hd963S5M68zIdPbzU9TLQl7EXzSF_YG2HMJs18isT6hiojbnvPI708n1vyq_KDokeAeS.jpg?quality=95&as=32x21,48x32,72x48,108x72,160x107,240x160,360x240,480x320,540x360,640x427,720x480,1080x720,1280x853,1440x960,2560x1707&from=bu&cs=2560x0",
-        "https://sun9-18.vkuserphoto.ru/s/v1/ig2/kD4jHe_RNHm_5PNaRIzCx2rviqvBQSKdtW6Oh94nohmJ0mzCvl5KPFO5eP1H6XQQL-rFblaQ4hOwZC0fFn4lLYxH.jpg?quality=95&as=32x43,48x64,72x96,108x144,160x213,240x320,360x480,480x640,540x720,640x853,720x960,1080x1440,1280x1707,1440x1920,1920x2560&from=bu&cs=1920x0"
+        "https://assets.science.nasa.gov/content/dam/science/missions/hubble/releases/2015/01/STScI-01EVT2P98FBWHNC1NV0E8WM1FW.tif/jcr:content/renditions/17384x5558.jpg",
+        "https://assets.science.nasa.gov/content/dam/science/missions/hubble/releases/2025/04/STScI-01JQCCTHRH3G9SQJ5QR84GEP0M.tif/jcr:content/renditions/Full%20Res%20(For%20Display).png"
     ]
     
     /// Array of titles corresponding to images
     private let imageTitles = [
-        "VK Photo Example",
-        "Sunset Beach",
-        "Mountain Peak",
-        "City Lights",
-        "Forest Path"
+        "Evrone",
+        "Andromeda 1",
+        "Landscape",
+        "Andromeda 2",
+        "Hubble Walk"
     ]
     
     /// Array of descriptions
     private let imageDescriptions = [
-        "Photo loaded from VK CDN with multiple sizes",
-        "Beautiful sunset at the beach with orange sky",
-        "Snow-capped mountain peak at sunrise",
-        "Urban cityscape at night with bright lights",
-        "Peaceful walking path through green forest"
+        "Corporate meeting of IT firm",
+        "Compass and Scale Image of PHAT Mosaic",
+        "Look at the river from a cliff during summer time",
+        "Hubble traces densely packed stars extending from the innermost hub of the galaxy",
+        "Mosaic of Hubble 35th Anniversary Targets"
     ]
     
     /// Cell reuse identifier - MUST match Storyboard identifier
@@ -105,12 +105,13 @@ class SimpleGalleryTableViewController: UITableViewController {
         
         let originalURL = imageURLs[indexPath.row]
         
-        // Get smart thumbnail URL (finds 240-width size with correct aspect ratio)
-        let thumbnailURL = URLHelper.getThumbnailURL(from: originalURL, targetWidth: 240)
+        // Get thumbnail strategy (VK URLs get modified, others need client-side resize)
+        let strategy = URLHelper.getThumbnailStrategy(from: originalURL, targetWidth: 240)
         
-        // Configure cell with THUMBNAIL URL
+        // Configure cell with appropriate strategy
         cell.configure(
-            with: thumbnailURL,
+            with: strategy.url,
+            needsClientResize: strategy.needsResize,
             title: imageTitles[indexPath.row],
             description: imageDescriptions[indexPath.row]
         )

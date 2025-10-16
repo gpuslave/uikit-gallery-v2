@@ -73,50 +73,40 @@ class ImageTableViewCell: UITableViewCell {
     
     // MARK: - Configuration Method
     
-    /// Configures the cell with image URL and text data
-    /// - Parameters:
-    ///   - imageURL: The URL string of the image (VK URL)
-    ///   - title: Title text for the cell
-    ///   - description: Description text for the cell
-    func configure(with imageURL: String, title: String, description: String) {
-        // Store the current URL (for cell reuse check)
+    func configure(with imageURL: String, needsClientResize: Bool, title: String, description: String) {
+        // Store current URL
         self.currentImageURL = imageURL
         
-        // Set text immediately (no waiting)
+        // Set text immediately
         titleLabel.text = title
         descriptionLabel.text = description
         
-        // Reset image and show loading indicator
+        // Reset and show loading
         galleryImageView.image = nil
         activityIndicator.startAnimating()
         
-        // Cancel any existing download for this cell
+        // Cancel existing download
         downloadTask?.cancel()
         
-        // Start downloading the image
-        downloadTask = ImageLoader.shared.loadImage(from: imageURL) { [weak self] image in
-            // Make sure this cell is still showing the same image URL
-            // (cell might have been reused for a different row)
-            guard self?.currentImageURL == imageURL else {
-                print("[Cell] Cell was reused, skipping image update")
-                return
-            }
+        // Load image with appropriate strategy
+        downloadTask = ImageLoader.shared.loadImage(
+            from: imageURL,
+            generateThumbnail: needsClientResize,
+            thumbnailWidth: 240
+        ) { [weak self] image in
+            guard self?.currentImageURL == imageURL else { return }
             
-            // Stop loading indicator
             self?.activityIndicator.stopAnimating()
             
-            // Set the image (or placeholder if failed)
             if let image = image {
-                // Successfully downloaded
                 self?.galleryImageView.image = image
             } else {
-                // Download failed - show placeholder
                 self?.galleryImageView.image = UIImage(systemName: "photo")
                 self?.galleryImageView.tintColor = .systemGray3
             }
         }
     }
-    
+
     // MARK: - Cell Reuse
     
     override func prepareForReuse() {

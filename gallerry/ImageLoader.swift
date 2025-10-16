@@ -135,6 +135,115 @@ class ImageLoader {
         return task
     }
     
+    // Add this method to ImageLoader class
+
+    /// Loads an image and optionally generates a thumbnail
+    /// - Parameters:
+    ///   - urlString: The URL string of the image
+    ///   - generateThumbnail: Whether to generate a thumbnail (for non-VK URLs)
+    ///   - thumbnailWidth: Target width for thumbnail generation
+    ///   - completion: Completion handler with the image
+    @discardableResult
+    func loadImage(from urlString: String, generateThumbnail: Bool = false, thumbnailWidth: Int = 240, completion: @escaping (UIImage?) -> Void) -> URLSessionDataTask? {
+        
+        let cacheKey = generateThumbnail ? "\(urlString)_thumb_\(thumbnailWidth)" : urlString
+            
+        // Check cache first
+        if let cachedImage = imageCache.object(forKey: cacheKey as NSString) {
+            print("[ImageLoader] Using cached image for: \(urlString.prefix(50))...")
+            completion(cachedImage)
+            return nil
+        }
+        
+        // Check if already downloading
+        if let existingTask = runningTasks[cacheKey] {
+            print("[ImageLoader] Already downloading: \(urlString.prefix(50))...")
+            return existingTask
+        }
+        
+        // Validate URL
+        guard let url = URL(string: urlString) else {
+            print("[ImageLoader] Invalid URL: \(urlString)")
+            completion(nil)
+            return nil
+        }
+        
+        print("[ImageLoader] Starting download: \(urlString.prefix(50))...")
+        if generateThumbnail {
+            print("[ImageLoader] Will generate \(thumbnailWidth)px thumbnail")
+        }
+        
+        // Create download task
+        let task = session.dataTask(with: url) { [weak self] data, response, error in
+            
+            // Remove from running tasks
+            self?.runningTasks.removeValue(forKey: cacheKey)
+            
+            // Handle errors
+            if let error = error {
+                print("[ImageLoader] Download failed: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+            
+            // Validate response
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                print("[ImageLoader] Invalid response")
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+            
+            guard let data = data else {
+                print("[ImageLoader] No data received")
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            
+            var finalImage: UIImage?
+            
+            if generateThumbnail {
+                // Generate thumbnail
+                finalImage = UIImage.thumbnail(from: data, maxPixelSize: thumbnailWidth)
+                print("[ImageLoader] Generated thumbnail: \(thumbnailWidth)px")
+                
+                // IMPORTANT: Also cache the full-size image for later use
+                if let fullImage = UIImage(data: data) {
+                    self?.imageCache.setObject(fullImage, forKey: urlString as NSString)
+                    print("[ImageLoader] Also cached full-size image")
+                }
+            } else {
+                // Load full image
+                finalImage = UIImage(data: data)
+            }
+            
+            guard let image = finalImage else {
+                print("[ImageLoader] Could not create image from data")
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            
+            // Cache the requested version (thumbnail or full)
+            self?.imageCache.setObject(image, forKey: cacheKey as NSString)
+            print("[ImageLoader] Image downloaded and cached: \(urlString.prefix(50))...")
+            
+            DispatchQueue.main.async {
+                completion(image)
+            }
+        }
+        
+        // Store and start task
+        runningTasks[cacheKey] = task
+        task.resume()
+        
+        return task
+    }
+
+    
     /// Cancels a specific image download
     /// - Parameter urlString: The URL of the image to cancel
     func cancelLoad(for urlString: String) {
